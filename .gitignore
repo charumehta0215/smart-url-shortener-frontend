@@ -1,4 +1,5 @@
 # Dependencies
+.vercel
 .vscode
 node_modules/
 
