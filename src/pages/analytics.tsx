@@ -324,7 +324,6 @@ export default function Analytics() {
 
 
              {/* Top Links (Global Analytics Only) */}
-             <div className="space-y-6 ">
              {isGlobal && chartData.topLinks.length > 0 && (
                <Card>
                  <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -342,7 +341,7 @@ export default function Analytics() {
                                <span className="text-xs text-muted-foreground w-4 mt-0.5">{index + 1}</span>
                                <div className="flex-1 min-w-0">
                                  <a 
-                                   href={`${window.location.origin}/${link.slug}`}
+                                   href={`${window.location.origin}/${link.slug}?source=internal`}
                                    target="_blank"
                                    rel="noopener noreferrer"
                                    className="font-medium text-[#6366f1] mb-1 hover:underline block"
@@ -367,7 +366,6 @@ export default function Analytics() {
                  </CardContent>
                </Card>
              )}
-             </div>
           <div className="space-y-6 ">
              {/* Top Performing Location */}
              <Card>

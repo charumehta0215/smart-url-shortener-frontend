@@ -200,7 +200,7 @@ export default function MyLinks() {
   const handleSocialShare = (platform: string) => {
     if (!sharingLink) return;
     
-    const shortURL = `${window.location.origin}/${sharingLink.slug}`;
+    const shortURL = `${window.location.origin}/${sharingLink.slug}?source=internal`;
     const text = `Check out this link: ${sharingLink.longURL}`;
     
     let shareUrl = '';
@@ -343,9 +343,14 @@ export default function MyLinks() {
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-lg text-foreground">
+                              <a 
+                                href={`${window.location.origin}/${link.slug}?source=internal`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-bold text-lg text-foreground hover:text-primary transition-colors"
+                              >
                                 {window.location.host}/{link.slug}
-                              </h3>
+                              </a>
                             </div>
                             <p className="text-sm text-muted-foreground truncate max-w-2xl">
                               {link.longURL}
@@ -392,7 +397,7 @@ export default function MyLinks() {
                             variant="outline"
                             size="sm"
                             className="gap-2"
-                            onClick={() => handleCopy(`${window.location.origin}/${link.slug}`, link._id)}
+                            onClick={() => handleCopy(`${window.location.origin}/${link.slug}?source=internal`, link._id)}
                           >
                             {copiedId === link._id ? (
                               <>
@@ -474,9 +479,14 @@ export default function MyLinks() {
                                 <div className="space-y-3 text-sm">
                                   <div className="flex justify-between py-2 border-b border-border/50">
                                     <span className="text-muted-foreground">Short URL:</span>
-                                    <span className="font-medium text-primary">
+                                    <a 
+                                      href={`${window.location.origin}/${link.slug}?source=internal`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="font-medium text-primary hover:underline"
+                                    >
                                       {window.location.origin}/{link.slug}
-                                    </span>
+                                    </a>
                                   </div>
                                   <div className="flex justify-between py-2 border-b border-border/50">
                                     <span className="text-muted-foreground">Total Clicks:</span>
@@ -507,7 +517,7 @@ export default function MyLinks() {
                                 </h4>
                                 <div className="bg-white p-4 rounded-lg  shadow-sm flex justify-center item-center">
                                   <img
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${window.location.origin}/${link.slug}`}
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${window.location.origin}/${link.slug}?source=internal`}
                                     alt="QR Code"
                                     className="w-32 h-32"
                                   />
@@ -516,7 +526,7 @@ export default function MyLinks() {
                                   variant="outline"
                                   size="sm"
                                   className="w-full mt-3 gap-2"
-                                  onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${window.location.origin}/${link.slug}`, '_blank')}
+                                  onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${window.location.origin}/${link.slug}?source=internal`, '_blank')}
                                 >
                                   <QrCode className="w-4 h-4" /> Download QR Code
                                 </Button>
@@ -624,7 +634,7 @@ export default function MyLinks() {
                   <label className="text-sm font-semibold text-foreground">Shareable Link</label>
                   <div className="flex gap-2">
                     <div className="flex-1 px-4 py-3 bg-secondary/50 rounded-lg text-sm text-foreground truncate">
-                      {window.location.origin}/{sharingLink?.slug}
+                      {window.location.origin}/{sharingLink?.slug}?source=internal
                     </div>
                     <Button
                       onClick={() => handleSocialShare('copy')}

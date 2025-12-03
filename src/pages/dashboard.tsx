@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Copy, Check, Link2, MousePointerClick, ExternalLink, QrCode } from "lucide-react";
+import { Copy, Check, Link2, MousePointerClick, ExternalLink, QrCode, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +22,8 @@ export default function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [qrUrl, setQrUrl] = useState("");
   const [generatedQr, setGeneratedQr] = useState("");
-
+  const [isResetting, setIsResetting] = useState(false);
+  const generateclearurl=generatedLink.replace(/^https?:\/\//, '')
   // Protect route
   useEffect(() => {
     const token = tokenManager.getToken();
@@ -48,15 +49,34 @@ export default function Dashboard() {
   const analytics = globalAnalytics?.data;
   const links = linksData?.data?.links || [];
   const recentLinks = links.slice(0, 5);
-
   // Create link mutation
   const createLinkMutation = useMutation({
-    mutationFn: (longURL: string) => linkApi.createShortLink({ longURL }),
-    onSuccess: (response) => {
+    mutationFn: async (longURL: string) => {
+      const startTime = Date.now();
+      const result = await linkApi.createShortLink({ longURL });
+      
+      // Ensure minimum 600ms loading time for better UX
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 600) {
+        await new Promise(resolve => setTimeout(resolve, 600 - elapsed));
+      }
+      
+      return result;
+    },
+    onSuccess: async (response) => {
       if (response.data) {
         setGeneratedLink(response.data.shortURL || `${window.location.origin}/${response.data.slug}`);
-        queryClient.invalidateQueries({ queryKey: ["userLinks"] });
-        queryClient.invalidateQueries({ queryKey: ["analytics", "global"] });
+        
+        // Invalidate and refetch queries
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["userLinks"] }),
+          queryClient.invalidateQueries({ queryKey: ["analytics", "global"] }),
+        ]);
+        
+        // Force refetch to ensure data is updated
+        queryClient.refetchQueries({ queryKey: ["analytics", "global"] });
+        queryClient.refetchQueries({ queryKey: ["userLinks"] });
+        
         toast({
           title: "Link Generated!",
           description: "Your smart link is ready to share.",
@@ -94,7 +114,7 @@ export default function Dashboard() {
   };
 
   // Prepare chart data
-  const browserData = analytics?.browsers 
+  const browserData = analytics?.browsers
     ? Object.entries(analytics.browsers).map(([name, value]) => ({ name, value }))
     : [];
 
@@ -139,20 +159,42 @@ export default function Dashboard() {
                           className="flex-1 h-12"
                           disabled={createLinkMutation.isPending}
                         />
-                        <Button 
-                          type="submit" 
+                        <Button
+                          type="submit"
                           size="lg"
                           disabled={createLinkMutation.isPending || !url}
-                          className="px-8 gap-2"
+                          className="px-8 gap-2 w-[160px]"
                         >
-                          {createLinkMutation.isPending ? "Generating..." : "Shorten"}
+                          {createLinkMutation.isPending ? (
+                            <span className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                              Generating...
+                            </span>
+                          ) : (
+                            "Shorten"
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            setIsResetting(true);
+                            setTimeout(() => {
+                              setUrl("");
+                              setGeneratedLink("");
+                              setIsResetting(false);
+                            }, 300);
+                          }}
+                          className="gap-2"
+                          disabled={createLinkMutation.isPending || isResetting}
+                        >
+                          <RefreshCcw className={`w-4 h-4 ${isResetting ? 'animate-spin' : ''}`} />
                         </Button>
                       </div>
                     </div>
 
                     <AnimatePresence>
                       {generatedLink && (
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, height: 0, marginTop: 0 }}
                           animate={{ opacity: 1, height: "auto", marginTop: 24 }}
                           exit={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -162,11 +204,11 @@ export default function Dashboard() {
                             <div className="flex items-center gap-3">
                               <div>
                                 <p className="text-sm text-muted-foreground">Your short link:</p>
-                                <p className="text-lg font-bold text-primary tracking-tight">{generatedLink}</p>
+                                <p className="text-lg font-bold text-primary tracking-tight">{generateclearurl}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2 w-full md:w-auto">
-                              <Button variant="outline" className="flex-1 md:flex-none gap-2" onClick={handleCopy}>
+                              <Button type="button" variant="outline" className="flex-1 md:flex-none gap-2" onClick={handleCopy}>
                                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                 {copied ? "Copied!" : "Copy"}
                               </Button>
@@ -183,24 +225,24 @@ export default function Dashboard() {
                     <div className="flex-1 space-y-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Destination URL</label>
-                        <Input 
-                          placeholder="https://example.com" 
+                        <Input
+                          placeholder="https://example.com"
                           className="h-12"
                           value={qrUrl}
                           onChange={(e) => setQrUrl(e.target.value)}
                         />
                       </div>
-                      <Button 
+                      <Button
                         onClick={handleGenerateQr}
-                        className="w-full h-12 gap-2" 
+                        className="w-full h-12 gap-2"
                         disabled={!qrUrl}
                       >
                         <QrCode className="w-4 h-4" /> Generate QR Code
                       </Button>
                     </div>
-                    
+
                     {generatedQr && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="flex-1 flex flex-col items-center justify-center"
@@ -208,8 +250,8 @@ export default function Dashboard() {
                         <div className="bg-white p-4 rounded-lg shadow-lg">
                           <img src={generatedQr} alt="QR Code" className="w-64 h-64" />
                         </div>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="mt-4 gap-2"
                           onClick={async () => {
                             try {
@@ -247,7 +289,7 @@ export default function Dashboard() {
           </Card>
         </section>
 
-      
+
 
         {/* Recent Links and Devices Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -267,33 +309,36 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                    {recentLinks.map((link: any) => {
-                      const cleanUrl = link.longURL.replace(/^https?:\/\//, '');
-                      const truncatedUrl = cleanUrl.length > 30 ? cleanUrl.substring(0, 30) + '...' : cleanUrl;
-                      
-                      return (
-                        <div key={link._id} className="flex items-center justify-between py-7 px-3 rounded-lg border transition-colors">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-medium text-[#6366f1]">
-                                /{link.slug}
-                              </p>
-                              <Badge variant="secondary" className="text-xs shrink-0">
-                                {link.clicksCount || 0} clicks
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {truncatedUrl}
+                  {recentLinks.map((link: any) => {
+                    const cleanUrl = link.longURL.replace(/^https?:\/\//, '');
+                    const truncatedUrl = cleanUrl.length > 30 ? cleanUrl.substring(0, 30) + '...' : cleanUrl;
+                    const clear= window.location.origin.replace(/^https?:\/\//, '');
+                    return (
+                      <div key={link._id} className="flex items-center justify-between py-7 px-3 rounded-lg border transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p  onClick={() => window.open(link.longURL, '_blank')} className="font-medium text-[#6366f1] cursor-pointer">
+                             {clear}/{link.slug}
                             </p>
+                            <Badge variant="secondary" className="text-xs shrink-0">
+                              {link.clicksCount || 0} clicks
+                            </Badge>
                           </div>
-                          <a href={`${window.location.origin}/${link.slug}`} target="_blank" rel="noopener noreferrer">
-                            <Button variant="ghost" size="sm" className="gap-2 shrink-0">
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                          </a>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {truncatedUrl}
+                          </p>
                         </div>
-                      );
-                    })}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="gap-2 shrink-0 cursor-pointer"
+                          onClick={() => window.open(link.longURL, '_blank')}
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -301,83 +346,83 @@ export default function Dashboard() {
 
           {/* Devices Chart */}
           <div>
-              {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1  gap-4 mb-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Links</CardTitle>
-              <Link2 className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics?.totalLinks || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Short Links Created</p>
-            </CardContent>
-          </Card>
+            {/* Quick Stats Cards */}
+            <div className="grid grid-cols-1  gap-4 mb-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Links</CardTitle>
+                  <Link2 className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics?.totalLinks || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Short Links Created</p>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Clicks</CardTitle>
-              <MousePointerClick className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics?.totalClicks || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">All time engagements</p>
-            </CardContent>
-          </Card>
-         
-        </div>
-         <Card>
-            <CardHeader>
-              <CardTitle>Devices</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {browserData.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  No device data yet
-                </div>
-              ) : (
-                <>
-                  <div className="h-[200px] w-full relative">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={browserData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {browserData.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="text-center">
-                        <span className="text-2xl font-bold block">{analytics?.totalClicks || 0}</span>
-                        <span className="text-xs text-muted-foreground">Total</span>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Clicks</CardTitle>
+                  <MousePointerClick className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics?.totalClicks || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">All time engagements</p>
+                </CardContent>
+              </Card>
+
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Devices</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {browserData.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    No device data yet
+                  </div>
+                ) : (
+                  <>
+                    <div className="h-[200px] w-full relative">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={browserData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            {browserData.map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="text-center">
+                          <span className="text-2xl font-bold block">{analytics?.totalClicks || 0}</span>
+                          <span className="text-xs text-muted-foreground">Total</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-3 mt-4">
-                    {browserData.map((entry, index) => (
-                      <div key={index} className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                        <span className="text-xs text-muted-foreground">{entry.name}</span>
-                        <span className="text-xs font-medium">{entry.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                    <div className="flex flex-wrap justify-center gap-3 mt-4">
+                      {browserData.map((entry, index) => (
+                        <div key={index} className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                          <span className="text-xs text-muted-foreground">{entry.name}</span>
+                          <span className="text-xs font-medium">{entry.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
-         
+
         </div>
       </div>
     </Layout>
