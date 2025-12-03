@@ -69,16 +69,46 @@ export default function Analytics() {
   const chartData = useMemo(() => {
     if (!analytics) return { clicksByDate: [], browsers: [], referrers: [], geo: [], topLinks: [] };
     
-    const clicksByDateData = Object.entries(analytics.clicksByDate).map(([date, clicks]) => ({ date, clicks }));
-    const browsersData = Object.entries(analytics.browsers).map(([name, value]) => ({ name, value }));
-    const referrersData = Object.entries(analytics.referrers).map(([name, value]) => ({ name, value }));
-    const geoData = Object.entries(analytics.geo).map(([country, value]) => ({ 
-      country, 
-      value, 
-      percentage: (value / analytics.totalClicks) * 100 
-    }));
+    // Safely handle each data type with filtering
+    const clicksByDateData = analytics.clicksByDate && typeof analytics.clicksByDate === 'object'
+      ? Object.entries(analytics.clicksByDate)
+          .filter(([_, clicks]) => clicks > 0)
+          .map(([date, clicks]) => ({ date, clicks }))
+      : [];
+      
+    const browsersData = analytics.browsers && typeof analytics.browsers === 'object'
+      ? Object.entries(analytics.browsers)
+          .filter(([_, value]) => value > 0)
+          .map(([name, value]) => ({ name, value }))
+      : [];
+      
+    const referrersData = analytics.referrers && typeof analytics.referrers === 'object'
+      ? Object.entries(analytics.referrers)
+          .filter(([_, value]) => value > 0)
+          .map(([name, value]) => ({ name, value }))
+      : [];
+      
+    const geoData = analytics.geo && typeof analytics.geo === 'object'
+      ? Object.entries(analytics.geo)
+          .filter(([_, value]) => value > 0)
+          .map(([country, value]) => ({ 
+            country, 
+            value, 
+            percentage: analytics.totalClicks > 0 ? (value / analytics.totalClicks) * 100 : 0
+          }))
+      : [];
     
-    const topLinksData = isGlobal && (analytics as any).topLinks ? (analytics as any).topLinks : [];
+    const topLinksData = isGlobal && (analytics as any).topLinks && Array.isArray((analytics as any).topLinks)
+      ? (analytics as any).topLinks
+      : [];
+    
+    console.log('Analytics Transform:', {
+      clicksByDate: clicksByDateData.length,
+      browsers: browsersData.length,
+      referrers: referrersData.length,
+      geo: geoData.length,
+      topLinks: topLinksData.length
+    });
     
     return {
       clicksByDate: clicksByDateData,
@@ -148,8 +178,6 @@ export default function Analytics() {
     );
   }
 
-  const hasData = analytics.totalClicks > 0;
-
   return (
     <Layout>
       <div className="space-y-6">
@@ -202,8 +230,7 @@ export default function Analytics() {
           </motion.div>
         </div>
 
-        {/* Main Grid Layout - Only show if there's data */}
-        {hasData && (
+        {/* Main Grid Layout - Show even without data to display empty states */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           
           {/* Column 1: Performance Stats */}
@@ -214,27 +241,33 @@ export default function Analytics() {
                    <CardTitle className="text-sm font-medium text-muted-foreground">Total Engagements by referrer</CardTitle>
                 </CardHeader>
                 <CardContent>
-                   <div className="h-[200px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                         <BarChart data={chartData.referrers} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
-                            <XAxis type="number" hide />
-                            <YAxis 
-                              dataKey="name" 
-                              type="category" 
-                              width={100} 
-                              tick={{fontSize: 10}}
-                              tickFormatter={(value) => {
-                                const cleanUrl = value.replace(/^https?:\/\//, '');
-                                const domain = cleanUrl.split('/')[0];
-                                return domain.length > 15 ? domain.substring(0, 15) + '...' : domain;
-                              }}
-                            />
-                            <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}} />
-                            <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
-                         </BarChart>
-                      </ResponsiveContainer>
-                   </div>
+                   {chartData.referrers.length === 0 ? (
+                     <div className="h-[200px] flex items-center justify-center text-center text-muted-foreground text-sm">
+                       No referrer data yet
+                     </div>
+                   ) : (
+                     <div className="h-[200px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                           <BarChart data={chartData.referrers} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
+                              <XAxis type="number" hide />
+                              <YAxis 
+                                dataKey="name" 
+                                type="category" 
+                                width={100} 
+                                tick={{fontSize: 10}}
+                                tickFormatter={(value) => {
+                                  const cleanUrl = value.replace(/^https?:\/\//, '');
+                                  const domain = cleanUrl.split('/')[0];
+                                  return domain.length > 15 ? domain.substring(0, 15) + '...' : domain;
+                                }}
+                              />
+                              <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}} />
+                              <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={20} />
+                           </BarChart>
+                        </ResponsiveContainer>
+                     </div>
+                   )}
                 </CardContent>
              </Card>
             
@@ -249,23 +282,29 @@ export default function Analytics() {
                    <CardTitle className="text-sm font-medium text-muted-foreground">Total Engagements over time</CardTitle>
                 </CardHeader>
                 <CardContent>
-                   <div className="h-[200px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                         <AreaChart data={chartData.clicksByDate}>
-                            <defs>
-                               <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2}/>
-                                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                               </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 10}} />
-                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10}} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Area type="monotone" dataKey="clicks" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorClicks)" />
-                         </AreaChart>
-                      </ResponsiveContainer>
-                   </div>
+                   {chartData.clicksByDate.length === 0 ? (
+                     <div className="h-[200px] flex items-center justify-center text-center text-muted-foreground text-sm">
+                       No engagement data yet
+                     </div>
+                   ) : (
+                     <div className="h-[200px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                           <AreaChart data={chartData.clicksByDate}>
+                              <defs>
+                                 <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2}/>
+                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                 </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                              <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                              <Tooltip content={<CustomTooltip />} />
+                              <Area type="monotone" dataKey="clicks" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorClicks)" />
+                           </AreaChart>
+                        </ResponsiveContainer>
+                     </div>
+                   )}
                 </CardContent>
              </Card>
 
@@ -280,42 +319,50 @@ export default function Analytics() {
                    <CardTitle className="text-sm font-medium text-muted-foreground">Engagements by device (Browsers)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                   <div className="h-[170px] w-full relative">
-                      <ResponsiveContainer width="100%" height="100%">
-                         <PieChart>
-                            <Pie
-                               data={chartData.browsers}
-                               cx="50%"
-                               cy="50%"
-                               innerRadius={60}
-                               outerRadius={80}
-                               paddingAngle={5}
-                               dataKey="value"
-                            >
-                               {chartData.browsers.map((_, index) => (
-                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                               ))}
-                            </Pie>
-                            <Tooltip content={<CustomTooltip />} />
-                         </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                         <div className="text-center">
-                            <span className="text-3xl font-bold block">{analytics.totalClicks}</span>
-                            <span className="text-xs text-muted-foreground">Total</span>
-                         </div>
-                      </div>
-                   </div>
-                   {/* Legend */}
-                   <div className="flex flex-wrap justify-center gap-3 mt-4">
-                      {chartData.browsers.map((entry, index) => (
-                         <div key={index} className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                            <span className="text-xs text-muted-foreground">{entry.name}</span>
-                            <span className="text-xs font-medium">{entry.value}</span>
-                         </div>
-                      ))}
-                   </div>
+                   {chartData.browsers.length === 0 ? (
+                     <div className="h-[170px] flex items-center justify-center text-center text-muted-foreground text-sm">
+                       No device data yet
+                     </div>
+                   ) : (
+                     <>
+                       <div className="h-[170px] w-full relative">
+                          <ResponsiveContainer width="100%" height="100%">
+                             <PieChart>
+                                <Pie
+                                   data={chartData.browsers}
+                                   cx="50%"
+                                   cy="50%"
+                                   innerRadius={60}
+                                   outerRadius={80}
+                                   paddingAngle={5}
+                                   dataKey="value"
+                                >
+                                   {chartData.browsers.map((_, index) => (
+                                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                   ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                             </PieChart>
+                          </ResponsiveContainer>
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                             <div className="text-center">
+                                <span className="text-3xl font-bold block">{analytics.totalClicks}</span>
+                                <span className="text-xs text-muted-foreground">Total</span>
+                             </div>
+                          </div>
+                       </div>
+                       {/* Legend */}
+                       <div className="flex flex-wrap justify-center gap-3 mt-4">
+                          {chartData.browsers.map((entry, index) => (
+                             <div key={index} className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                <span className="text-xs text-muted-foreground">{entry.name}</span>
+                                <span className="text-xs font-medium">{entry.value}</span>
+                             </div>
+                          ))}
+                       </div>
+                     </>
+                   )}
                 </CardContent>
              </Card>      
           </div>
@@ -422,7 +469,6 @@ export default function Analytics() {
           </div>
 
         </div>
-        )}
       </div>
     </Layout>
   );

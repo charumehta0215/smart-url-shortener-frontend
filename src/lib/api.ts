@@ -67,7 +67,6 @@ export interface LinkResponse {
   data?: {
     _id: string;
     longURL: string;
-    shortURL: string;
     slug: string;
     clicks: number;
     createdAt: string;

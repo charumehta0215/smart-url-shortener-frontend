@@ -65,7 +65,7 @@ export default function Dashboard() {
     },
     onSuccess: async (response) => {
       if (response.data) {
-        setGeneratedLink(response.data.shortURL || `${window.location.origin}/${response.data.slug}`);
+        setGeneratedLink(`${window.location.origin}/${response.data.slug}`);
         
         // Invalidate and refetch queries
         await Promise.all([
@@ -113,12 +113,18 @@ export default function Dashboard() {
     setGeneratedQr(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrUrl}`);
   };
 
-  // Prepare chart data
-  const browserData = analytics?.browsers
-    ? Object.entries(analytics.browsers).map(([name, value]) => ({ name, value }))
+  // Prepare chart data - handle both object and empty cases
+  const browserData = analytics?.browsers && typeof analytics.browsers === 'object'
+    ? Object.entries(analytics.browsers)
+        .filter(([_, value]) => value > 0)
+        .map(([name, value]) => ({ name, value }))
     : [];
 
   const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
+  
+  // Debug logging
+  console.log('Analytics Data:', analytics);
+  console.log('Browser Data:', browserData);
 
   return (
     <Layout>
