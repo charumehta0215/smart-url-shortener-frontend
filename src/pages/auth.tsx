@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { authApi, tokenManager, userManager } from "@/lib/api";
+import { getCleanErrorMessage } from "@/lib/errorUtils";
 import { useEffect } from "react";
 
 const loginSchema = z.object({
@@ -70,7 +71,7 @@ export default function AuthPage() {
     onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        description: getCleanErrorMessage(error, "Invalid credentials. Please try again."),
         variant: "destructive",
       });
     },
@@ -90,7 +91,7 @@ export default function AuthPage() {
     onError: (error: Error) => {
       toast({
         title: "Registration failed",
-        description: error.message || "Could not create account. Please try again.",
+        description: getCleanErrorMessage(error, "Could not create account. Please try again."),
         variant: "destructive",
       });
     },

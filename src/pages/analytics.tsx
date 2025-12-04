@@ -102,14 +102,6 @@ export default function Analytics() {
       ? (analytics as any).topLinks
       : [];
     
-    console.log('Analytics Transform:', {
-      clicksByDate: clicksByDateData.length,
-      browsers: browsersData.length,
-      referrers: referrersData.length,
-      geo: geoData.length,
-      topLinks: topLinksData.length
-    });
-    
     return {
       clicksByDate: clicksByDateData,
       browsers: browsersData,
@@ -142,7 +134,6 @@ export default function Analytics() {
   }
 
   if (error) {
-    console.error("Analytics error:", error);
     const errorMessage = error instanceof Error ? error.message : "Server error occurred";
     const isNotFound = errorMessage.includes("Short Url not found");
     
@@ -439,11 +430,10 @@ export default function Analytics() {
                 <CardContent>
                    <div className="space-y-4">
                       <div className="flex justify-between text-xs text-muted-foreground border-b pb-2">
+                        <span>Sr No</span>
                          <span>Country</span>
-                         <div className="flex gap-4">
                             <span>Engagements</span>
                             <span>%</span>
-                         </div>
                       </div>
                       {chartData.geo.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground text-sm">
@@ -452,14 +442,11 @@ export default function Analytics() {
                       ) : (
                         chartData.geo.map((item, index) => (
                          <div key={index} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                               <span className="text-xs text-muted-foreground w-4">{index + 1}</span>
-                               <span className="font-medium">{item.country}</span>
-                            </div>
-                            <div className="flex gap-8 text-right">
-                               <span className="font-bold w-8">{item.value}</span>
-                               <span className="text-muted-foreground w-8">{item.percentage.toFixed(1)}%</span>
-                            </div>
+                          <span className="text-xs text-muted-foreground w-4">{index + 1}</span>
+                          <span className="font-medium">{item.country}</span>
+                          <span className="font-bold w-8 text-center">{item.value} </span>
+                          <span className="text-muted-foreground w-10">{item.percentage.toFixed(1)}%</span>
+                              
                          </div>
                         ))
                       )}

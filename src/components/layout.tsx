@@ -1,14 +1,16 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, PieChart, Link as LinkIcon, LogOut, Plus, Link2 } from "lucide-react";
+import { LayoutDashboard, PieChart, Link as LinkIcon, LogOut, Plus, Link2, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { tokenManager, userManager } from "@/lib/api";
+import { useState } from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const user = userManager.getUser();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     tokenManager.removeToken();
@@ -18,6 +20,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       description: "You have been successfully logged out.",
     });
     setLocation("/login");
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
   };
 
   // Get user initials for avatar from email
@@ -30,17 +36,55 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row font-sans transition-colors duration-300">
+      {/* Mobile Header with Hamburger */}
+      <div className="md:hidden sticky top-0 z-50 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-primary font-bold text-xl">
+          <LinkIcon className="w-5 h-5" />
+          <span>SmartShort</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="h-9 w-9"
+        >
+          {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </Button>
+      </div>
+
+      {/* Overlay for mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-card border-r border-border h-auto md:h-screen flex flex-col sticky top-0 z-10 transition-colors duration-300">
+      <aside className={`
+        fixed md:sticky top-0 left-0 z-40 md:z-10
+        w-64 bg-card border-r border-border h-screen flex flex-col
+        transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
         <div className="p-6 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2 text-primary font-bold text-2xl">
             <LinkIcon className="w-6 h-6" />
             <span>SmartShort</span>
           </div>
+          {/* Close button for mobile */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={closeSidebar}
+            className="md:hidden h-8 w-8"
+          >
+            <X className="w-4 h-4" />
+          </Button>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          <Link href="/dashboard">
+          <Link href="/dashboard" onClick={closeSidebar}>
             <Button
               variant={location === "/dashboard" ? "secondary" : "ghost"}
               className="w-full justify-start gap-3 font-medium"
@@ -49,7 +93,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               Dashboard
             </Button>
           </Link>
-          <Link href="/my-links">
+          <Link href="/my-links" onClick={closeSidebar}>
             <Button
               variant={location === "/my-links" ? "secondary" : "ghost"}
               className="w-full justify-start gap-3 font-medium"
@@ -60,7 +104,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </Link>
           
           {/* Global Analytics */}
-          <Link href="/analytics">
+          <Link href="/analytics" onClick={closeSidebar}>
             <Button
               variant={location.startsWith("/analytics") ? "secondary" : "ghost"}
               className="w-full justify-start gap-3 font-medium"

@@ -67,15 +67,11 @@ export default function Dashboard() {
       if (response.data) {
         setGeneratedLink(`${window.location.origin}/${response.data.slug}`);
         
-        // Invalidate and refetch queries
+        // Invalidate queries - this automatically triggers a refetch
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["userLinks"] }),
           queryClient.invalidateQueries({ queryKey: ["analytics", "global"] }),
         ]);
-        
-        // Force refetch to ensure data is updated
-        queryClient.refetchQueries({ queryKey: ["analytics", "global"] });
-        queryClient.refetchQueries({ queryKey: ["userLinks"] });
         
         toast({
           title: "Link Generated!",
@@ -121,10 +117,6 @@ export default function Dashboard() {
     : [];
 
   const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
-  
-  // Debug logging
-  console.log('Analytics Data:', analytics);
-  console.log('Browser Data:', browserData);
 
   return (
     <Layout>
@@ -157,7 +149,7 @@ export default function Dashboard() {
                   <form onSubmit={handleShorten} className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Destination URL</label>
-                      <div className="flex gap-3">
+                      <div className="flex flex-col sm:flex-row gap-3">
                         <Input
                           placeholder="https://example.com/your-long-url"
                           value={url}
@@ -165,36 +157,39 @@ export default function Dashboard() {
                           className="flex-1 h-12"
                           disabled={createLinkMutation.isPending}
                         />
-                        <Button
-                          type="submit"
-                          size="lg"
-                          disabled={createLinkMutation.isPending || !url}
-                          className="px-8 gap-2 w-[160px]"
-                        >
-                          {createLinkMutation.isPending ? (
-                            <span className="flex items-center gap-2">
-                              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                              Generating...
-                            </span>
-                          ) : (
-                            "Shorten"
-                          )}
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            setIsResetting(true);
-                            setTimeout(() => {
-                              setUrl("");
-                              setGeneratedLink("");
-                              setIsResetting(false);
-                            }, 300);
-                          }}
-                          className="gap-2"
-                          disabled={createLinkMutation.isPending || isResetting}
-                        >
-                          <RefreshCcw className={`w-4 h-4 ${isResetting ? 'animate-spin' : ''}`} />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            type="submit"
+                            size="lg"
+                            disabled={createLinkMutation.isPending || !url}
+                            className="flex-1 sm:flex-none px-8 gap-2 sm:w-[160px]"
+                          >
+                            {createLinkMutation.isPending ? (
+                              <span className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                <span className="hidden sm:inline">Generating...</span>
+                              </span>
+                            ) : (
+                              "Shorten"
+                            )}
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              setIsResetting(true);
+                              setTimeout(() => {
+                                setUrl("");
+                                setGeneratedLink("");
+                                setIsResetting(false);
+                              }, 300);
+                            }}
+                            size="lg"
+                            className="gap-2"
+                            disabled={createLinkMutation.isPending || isResetting}
+                          >
+                            <RefreshCcw className={`w-4 h-4 ${isResetting ? 'animate-spin' : ''}`} />
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
@@ -206,11 +201,11 @@ export default function Dashboard() {
                           exit={{ opacity: 0, height: 0, marginTop: 0 }}
                           className="pt-6 border-t border-border"
                         >
-                          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-secondary/30 p-4 rounded-xl border border-secondary">
-                            <div className="flex items-center gap-3">
-                              <div>
+                          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-secondary/30 p-4 rounded-xl border border-secondary">
+                            <div className="flex items-center gap-3 w-full md:w-auto overflow-hidden">
+                              <div className="min-w-0 flex-1">
                                 <p className="text-sm text-muted-foreground">Your short link:</p>
-                                <p className="text-lg font-bold text-primary tracking-tight">{generateclearurl}</p>
+                                <p className="text-base sm:text-lg font-bold text-primary tracking-tight break-all">{generateclearurl}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2 w-full md:w-auto">
@@ -320,24 +315,24 @@ export default function Dashboard() {
                     const truncatedUrl = cleanUrl.length > 30 ? cleanUrl.substring(0, 30) + '...' : cleanUrl;
                     const clear= window.location.origin.replace(/^https?:\/\//, '');
                     return (
-                      <div key={link._id} className="flex items-center justify-between py-7 px-3 rounded-lg border transition-colors">
+                      <div key={link._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4 px-3 rounded-lg border transition-colors">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p  onClick={() => window.open(link.longURL, '_blank')} className="font-medium text-[#6366f1] cursor-pointer">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                            <p  onClick={() => window.open(link.longURL, '_blank')} className="font-medium text-[#6366f1] cursor-pointer break-all text-sm sm:text-base">
                              {clear}/{link.slug}
                             </p>
-                            <Badge variant="secondary" className="text-xs shrink-0">
+                            <Badge variant="secondary" className="text-xs shrink-0 w-fit">
                               {link.clicksCount || 0} clicks
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground truncate">
+                          <p className="text-xs sm:text-sm text-muted-foreground break-all">
                             {truncatedUrl}
                           </p>
                         </div>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="gap-2 shrink-0 cursor-pointer"
+                          className="gap-2 shrink-0 cursor-pointer self-end sm:self-auto"
                           onClick={() => window.open(link.longURL, '_blank')}
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -353,25 +348,25 @@ export default function Dashboard() {
           {/* Devices Chart */}
           <div>
             {/* Quick Stats Cards */}
-            <div className="grid grid-cols-1  gap-4 mb-3">
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-4 mb-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Links</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total Links</CardTitle>
                   <Link2 className="w-4 h-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analytics?.totalLinks || 0}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{analytics?.totalLinks || 0}</div>
                   <p className="text-xs text-muted-foreground mt-1">Short Links Created</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Clicks</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total Clicks</CardTitle>
                   <MousePointerClick className="w-4 h-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analytics?.totalClicks || 0}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{analytics?.totalClicks || 0}</div>
                   <p className="text-xs text-muted-foreground mt-1">All time engagements</p>
                 </CardContent>
               </Card>

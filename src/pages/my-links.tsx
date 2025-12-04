@@ -91,7 +91,6 @@ export default function MyLinks() {
 
   // Handle authentication errors
   if (error) {
-    console.error("Failed to fetch links:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes("401") || errorMessage.includes("authentication")) {
       toast({
@@ -100,6 +99,12 @@ export default function MyLinks() {
         variant: "destructive",
       });
       setTimeout(() => setLocation("/login"), 1500);
+    } else {
+      toast({
+        title: "Error loading links",
+        description: errorMessage || "Failed to fetch your links. Please try again.",
+        variant: "destructive",
+      });
     }
   }
 
@@ -200,7 +205,7 @@ export default function MyLinks() {
   const handleSocialShare = (platform: string) => {
     if (!sharingLink) return;
     
-    const shortURL = `${window.location.origin}/${sharingLink.slug}?source=internal`;
+    const shortURL = `${window.location.origin}/${sharingLink.slug}`;
     const text = `Check out this link: ${sharingLink.longURL}`;
     
     let shareUrl = '';
@@ -336,51 +341,53 @@ export default function MyLinks() {
               >
                 <CardContent className="p-0">
                   {/* Main Card Content */}
-                  <div className="p-6">
-                    <div className="flex items-start gap-4">
+                  <div className="p-4 sm:p-6">
+                    <div className="flex flex-col gap-4">
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                               <a 
                                 href={`${window.location.origin}/${link.slug}?source=internal`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-bold text-lg text-foreground hover:text-primary transition-colors"
+                                className="font-bold text-base sm:text-lg text-foreground hover:text-primary transition-colors break-all"
                               >
                                 {window.location.host}/{link.slug}
                               </a>
                             </div>
-                            <p className="text-sm text-muted-foreground truncate max-w-2xl">
+                            <p className="text-xs sm:text-sm text-muted-foreground break-all">
                               {link.longURL}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditClick(link)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit2 size={16} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteClick(link)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                            >
-                              <Trash2 size={16} />
-                            </Button>
+                          <div className="flex items-center justify-between sm:justify-end gap-2">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {new Date(link.createdAt).toLocaleDateString()}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditClick(link)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit2 size={16} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteClick(link)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
                           </div>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap ml-4">
-                            {new Date(link.createdAt).toLocaleDateString()}
-                          </span>
                         </div>
 
                         {/* Stats Row */}
-                        <div className="flex items-center gap-6 text-sm font-medium text-muted-foreground mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs sm:text-sm font-medium text-muted-foreground mb-4">
                           <span className="flex items-center gap-1.5 text-primary">
                             <BarChart2 className="w-4 h-4" />
                             {link.clicksCount.toLocaleString()} clicks
@@ -392,20 +399,20 @@ export default function MyLinks() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="gap-2"
-                            onClick={() => handleCopy(`${window.location.origin}/${link.slug}?source=internal`, link._id)}
+                            className="gap-2 text-xs sm:text-sm"
+                            onClick={() => handleCopy(`${window.location.origin}/${link.slug}`, link._id)}
                           >
                             {copiedId === link._id ? (
                               <>
-                                <Check className="w-4 h-4" /> Copied!
+                                <Check className="w-3 h-3 sm:w-4 sm:h-4" /> Copied!
                               </>
                             ) : (
                               <>
-                                <Copy className="w-4 h-4" /> Copy
+                                <Copy className="w-3 h-3 sm:w-4 sm:h-4" /> Copy
                               </>
                             )}
                           </Button>
@@ -413,43 +420,43 @@ export default function MyLinks() {
                           <Button
                             variant="default"
                             size="sm"
-                            className="gap-2"
+                            className="gap-2 text-xs sm:text-sm"
                             onClick={() => setLocation(`/analytics/${link.slug}`)}
                           >
-                            <BarChart2 className="w-4 h-4" /> Analytics
+                            <BarChart2 className="w-3 h-3 sm:w-4 sm:h-4" /> Analytics
                           </Button>
 
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="gap-2"
+                            className="gap-2 text-xs sm:text-sm"
                             onClick={() => window.open(link.longURL, '_blank')}
                           >
-                            <ExternalLink className="w-4 h-4" /> Visit
+                            <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" /> Visit
                           </Button>
 
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="gap-2"
+                            className="gap-2 text-xs sm:text-sm"
                             onClick={() => handleShare(link)}
                           >
-                            <Share2 className="w-4 h-4" /> Share
+                            <Share2 className="w-3 h-3 sm:w-4 sm:h-4" /> Share
                           </Button>
 
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="gap-2 ml-auto"
+                            className="gap-2 col-span-2 sm:col-span-1 sm:ml-auto text-xs sm:text-sm"
                             onClick={() => toggleExpand(link._id)}
                           >
                             {expandedId === link._id ? (
                               <>
-                                <ChevronUp className="w-4 h-4" /> Less
+                                <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" /> Less
                               </>
                             ) : (
                               <>
-                                <ChevronDown className="w-4 h-4" /> More
+                                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" /> More
                               </>
                             )}
                           </Button>
@@ -468,22 +475,22 @@ export default function MyLinks() {
                         transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                       >
-                        <div className="px-6 pb-6 pt-0 border-t border-border/50">
-                          <div className="grid md:grid-cols-2 gap-6 mt-6">
+                        <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-0 border-t border-border/50">
+                          <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
                             {/* Left Column - Details */}
                             <div className="space-y-4">
                               <div>
                                 <h4 className="text-sm font-semibold text-foreground mb-3">
                                   Link Details
                                 </h4>
-                                <div className="space-y-3 text-sm">
-                                  <div className="flex justify-between py-2 border-b border-border/50">
+                                <div className="space-y-3 text-xs sm:text-sm">
+                                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2 py-2 border-b border-border/50">
                                     <span className="text-muted-foreground">Short URL:</span>
                                     <a 
                                       href={`${window.location.origin}/${link.slug}?source=internal`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="font-medium text-primary hover:underline"
+                                      className="font-medium text-primary hover:underline break-all"
                                     >
                                       {window.location.origin}/{link.slug}
                                     </a>
@@ -634,7 +641,7 @@ export default function MyLinks() {
                   <label className="text-sm font-semibold text-foreground">Shareable Link</label>
                   <div className="flex gap-2">
                     <div className="flex-1 px-4 py-3 bg-secondary/50 rounded-lg text-sm text-foreground truncate">
-                      {window.location.origin}/{sharingLink?.slug}?source=internal
+                      {window.location.origin}/{sharingLink?.slug}
                     </div>
                     <Button
                       onClick={() => handleSocialShare('copy')}
