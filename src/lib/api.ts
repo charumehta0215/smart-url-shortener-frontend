@@ -73,6 +73,10 @@ export interface LinkResponse {
   };
 }
 
+export interface GoogleLoginData {
+  idToken: string;
+}
+
 export const authApi = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
     const res = await apiRequest("POST", `${API_BASE_URL}/auth/register`, data);
@@ -81,6 +85,11 @@ export const authApi = {
 
   login: async (data: LoginData): Promise<AuthResponse> => {
     const res = await apiRequest("POST", `${API_BASE_URL}/auth/login`, data);
+    return res.json();
+  },
+
+  googleLogin: async (data: GoogleLoginData): Promise<AuthResponse> => {
+    const res = await apiRequest("POST", `${API_BASE_URL}/auth/google-login`, data);
     return res.json();
   },
 

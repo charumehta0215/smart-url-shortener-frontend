@@ -9,7 +9,7 @@ import { useTheme } from "next-themes";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
-  const { theme } = useTheme();
+  const { theme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   // Avoid hydration mismatch
@@ -25,8 +25,9 @@ export default function LandingPage() {
     }
   }, [setLocation]);
 
-  // Determine which images to use based on theme
-  const isDark = theme === "dark";
+  // Determine which images to use based on theme (use resolvedTheme for system preference)
+  const currentTheme = resolvedTheme || theme;
+  const isDark = currentTheme === "dark";
   const imageSuffix = isDark ? "-dark" : "-light";
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">

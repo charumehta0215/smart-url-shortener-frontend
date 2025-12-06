@@ -19,7 +19,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       title: "Logged out",
       description: "You have been successfully logged out.",
     });
-    setLocation("/login");
+    setLocation("/");
   };
 
   const closeSidebar = () => {

@@ -7,16 +7,17 @@ async function throwIfResNotOk(res: Response) {
     try {
       const text = await res.text();
       
-      // Try to parse as JSON to extract the message field
       try {
         const json = JSON.parse(text);
         errorMessage = json.message || json.error || text;
       } catch {
-        // If not JSON, use the text as-is
-        errorMessage = text || res.statusText;
+        if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+          errorMessage = `Backend error (${res.status}): ${res.statusText}. The API endpoint may not exist or the server is down.`;
+        } else {
+          errorMessage = text || res.statusText;
+        }
       }
     } catch {
-      // If reading text fails, use status text
       errorMessage = res.statusText;
     }
     
@@ -75,7 +76,7 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: true,
-      staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh for 5 min, then refetches on focus
+      staleTime: 5 * 60 * 1000,
       retry: false,
     },
     mutations: {
