@@ -1,0 +1,14 @@
+# SmartShort - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /my-links
+Disallow: /analytics
+Disallow: /register
+Disallow: /login
+
+# Sitemap
+Sitemap: https://qr-url.vercel.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1

@@ -15,6 +15,7 @@ import { authApi, tokenManager, userManager } from "@/lib/api";
 import { getCleanErrorMessage } from "@/lib/errorUtils";
 import { useEffect } from "react";
 import { signInWithGoogle } from "@/lib/firebase";
+import { SEO } from "@/components/seo";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -134,7 +135,13 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background relative overflow-hidden p-4">
+    <>
+      <SEO
+        title="Sign Up - SmartShort URL Shortener"
+        description="Create your free SmartShort account. Start shortening URLs, tracking clicks, and analyzing your links with AI-powered insights today."
+        noindex={true}
+      />
+      <div className="min-h-screen w-full flex items-center justify-center bg-background relative overflow-hidden p-4">
       {/* Background Decorations */}
       <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-secondary/30 rounded-full blur-3xl opacity-50" />
       <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl opacity-50" />
@@ -359,5 +366,6 @@ export default function AuthPage() {
         </Tabs>
       </motion.div>
     </div>
+    </>
   );
 }

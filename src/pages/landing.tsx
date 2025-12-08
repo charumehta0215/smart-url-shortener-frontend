@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { tokenManager } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { SEO } from "@/components/seo";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -30,7 +31,14 @@ export default function LandingPage() {
   const isDark = currentTheme === "dark";
   const imageSuffix = isDark ? "-dark" : "-light";
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
+    <>
+      <SEO
+        title="SmartShort - Free URL Shortener with Analytics & Custom Links"
+        description="Create short links instantly with SmartShort. Track clicks, analyze traffic, and optimize your marketing campaigns with AI-powered insights. Free forever with custom URLs and QR codes."
+        keywords="url shortener, link shortener, short url, custom link, qr code generator, link analytics, click tracking, bitly alternative, free url shortener, link management"
+        canonical="https://qr-url.vercel.app/"
+      />
+      <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Header */}
       <header className="container mx-auto px-4 h-20 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-50 border-b border-border/50">
         <div className="flex items-center gap-2 text-primary font-bold text-2xl">
@@ -104,35 +112,37 @@ export default function LandingPage() {
                 <div className="aspect-[16/9] bg-secondary/10 flex items-center justify-center text-muted-foreground">
                    {/* Dashboard preview with theme-aware images */}
                    {mounted ? (
-                     <div className="w-full h-full p-8 grid grid-cols-4 gap-4">
-                        <div className="col-span-1 bg-background rounded-lg h-full shadow-sm overflow-hidden">
+                     <div className="w-full h-full p-8 grid grid-cols-3 gap-4">
+                    {/*
+                    <div className="col-span-1 bg-background rounded-lg h-full shadow-sm overflow-hidden">
                           <img 
                             src={`/assets/Images/left${imageSuffix}.png`} 
                             alt="Sidebar navigation" 
-                            className="w-full h-full object-contain" 
+                            className="w-full h-full object-cover" 
                           />
-                        </div>
+                        </div> 
+                       */}
                         <div className="col-span-3 flex flex-col gap-4">
-                           <div className="h-32 bg-background rounded-lg shadow-sm overflow-hidden">
+                           <div className="hidden md:block h-32 bg-background rounded-lg shadow-sm overflow-hidden">
                              <img 
                                src={`/assets/Images/top${imageSuffix}.png`} 
                                alt="Top section" 
-                               className="w-full h-full object-contain" 
+                               className="w-full h-full object-fill" 
                              />
                            </div>
-                           <div className="flex-1 grid grid-cols-2 gap-4">
+                           <div className=" flex-1 grid md:grid-cols-2 gap-4">
                               <div className="bg-background rounded-lg shadow-sm overflow-hidden">
                                 <img 
                                   src={`/assets/Images/center1${imageSuffix}.png`} 
                                   alt="Analytics chart" 
-                                  className="w-full h-full object-contain" 
+                                  className="w-full h-full object-fill" 
                                 />
                               </div>
                               <div className="bg-background rounded-lg shadow-sm overflow-hidden">
                                 <img 
                                   src={`/assets/Images/center2${imageSuffix}.png`} 
                                   alt="Statistics" 
-                                  className="w-full h-full object-contain" 
+                                  className="w-full h-full object-fill" 
                                 />
                               </div>
                            </div>
@@ -237,5 +247,6 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }
